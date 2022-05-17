@@ -1,7 +1,10 @@
 import { sign } from "crypto";
+import { GetServerSideProps } from "next";
 import { FormEvent, useContext, useState } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import styles from "../styles/Home.module.css";
+import { parseCookies} from 'nookies'
+import { withSSRGuest } from "../utils/withSSRGuest";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -35,3 +38,13 @@ export default function Home() {
     </form>
   );
 }
+
+
+export const getServerSideProps = withSSRGuest(async (ctx) => {
+
+  return{
+    props: {
+      
+    }
+  }
+})
