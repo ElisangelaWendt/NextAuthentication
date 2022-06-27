@@ -6,7 +6,7 @@ import { api } from "../services/apiClient";
 type User={
   email: string;
   permissions: string[]
-  roles: string;
+  roles: string[];
 }
 
 type SignInCredentials = {
@@ -15,7 +15,8 @@ type SignInCredentials = {
 }
 
 type AuthContextData = {
-  signIn(credentials: SignInCredentials): Promise<void>;
+  signIn:(credentials: SignInCredentials) => Promise<void>;
+  signOut:() => void;
   isAuthenticated: boolean;
   user: User
 }
@@ -25,9 +26,13 @@ type AuthProviderProps = {
 
 export const AuthContext = createContext({} as AuthContextData);
 
+let authChannel: BroadcastChannel;
+
 export function signOut(){
   destroyCookie(undefined, 'nextauth.token')
   destroyCookie(undefined, 'nextauth.refreshToken')
+
+  authChannel.postMessage('SignOut')
 
   Router.push('/')
 }
@@ -35,6 +40,20 @@ export function signOut(){
 export function AuthProvider({children}:AuthProviderProps){
   const [user, setUser] = useState<User>()
 const isAuthenticated = !!user;
+
+useEffect(() =>{
+  authChannel = new BroadcastChannel('auth')
+
+  authChannel.onmessage = (message) => {
+    switch(message.data){
+      case 'sigOut':
+        signOut();
+        break;
+        default:
+          break;
+    }
+  }
+})
 
 useEffect(() => { //use effect sempre roda pelo lado do browser, nunca pelo lado do servidor
 const {'nextauth.token': token} = parseCookies()
@@ -83,7 +102,7 @@ async function signIn({email, password} : SignInCredentials){
 }
 
   return(
-    <AuthContext.Provider value={{signIn, isAuthenticated, user}}>
+    <AuthContext.Provider value={{signIn, signOut, isAuthenticated, user}}>
       {children}
     </AuthContext.Provider>
   )
